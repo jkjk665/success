@@ -1,0 +1,102 @@
+#常用的四个库和一个document，os用来建文件，request的get方法用来获取页面，lxml的etree为xpath打基础，parse用来编gbk码
+import os
+import requests
+from lxml import etree
+from docx import Document
+from urllib import parse
+
+#从开发者工具里的network中拷贝
+headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.97 Safari/537.36'}
+
+
+# 查询小说
+def search_book():
+#在笔趣阁的查询页面上方复制下来，q后面的汉字会被自动转为其他形式（gbk码，有关汉字的一种编码方式）
+    url = 'https://so.biqusoso.com/s.php?ie=gbk&siteid=biqugex.com&s=9157106854577873494&q='
+
+    book_name = input('请输入你想要爬取的小说：')
+
+    # 对输入的字符进行编码转换为gbk编码,再对其进行url编码操作
+    book_name = parse.quote(book_name.encode('gbk'))
+#拼接url
+    book_url = url + book_name
+    return book_url
+
+
+# 判断是否有书，并提示是否下载
+def find_book(book_url):
+    # 调用查找search_book()函数 查找跳转至相应界面
+    url = book_url
+
+    # 请求页面
+    html = requests.get(url, headers)
+    root = etree.HTML(html.content.decode('utf-8'))
+
+    # 处理异常 未找到书籍时返回提示
+    if(root.xpath('//div[@class="search-list"]/ul/li/span/a/@href[1]') == []):
+        print('搜索的书不存在，请正确输入书名')
+    else:
+        print('找到了作者为', root.xpath('//div[@class="search-list"]/ul/li/span[@class="s4"]/text()')[0],
+              ',书名为《', root.xpath('//div[@class="search-list"]/ul/li/span/a/text()')[0], '》,请问是否下载[Y][N]'
+              , end='')
+        In = input()
+        if In == 'Y' or In == 'y':
+
+            # 创建以书名命名的文件夹
+            path = '《' + str(root.xpath('//div[@class="search-list"]/ul/li/span/a/text()')[0]) + '》'
+            if not os.path.exists(path):
+                os.mkdir(path)
+#第一界面的超链接传入，这个URL比较全，不用再处理
+            book_content_list(root.xpath('//div[@class="search-list"]/ul/li/span/a/@href')[0])
+
+
+# 获取目录的URL 并调用download_book()函数下载内容
+def book_content_list(url):
+#get即进入新界面
+    html = requests.get(url, headers)
+    root = etree.HTML(html.content)
+
+    # 获得一系列小说的URL
+    s_list = root.xpath('//div[@class="listmain"]/dl/dd/a/@href')
+    #前十二章为最新章节，所以用下切片，切去前十二个，拿到一系列URL，当然要一一循环（传入下载函数），且这个URL不全，要拼接下
+    for dd_url in s_list[12:]:
+        download_book('https://www.biqugex.com' + str(dd_url))
+        print('  content_url:'+ 'https://www.biqugex.com' + str(dd_url))
+
+
+def download_book(url):
+#拿到每章的url，在进入小说的正文里
+    html = requests.get(url, headers)
+    root = etree.HTML(html.content)
+    
+    text_name = root.xpath('//div[@class="content"]/h1/text()')[0]          #小说章节名
+    texts = root.xpath('//div[@class="showtxt"]/text()')
+    
+    #创建docx文件，并一点一点取出add到文件里
+    document = Document()
+    for text in texts:
+        document.add_paragraph(text)
+    print('《' + text_name + '》已下载完成', end='')
+    file_name = root.xpath('//div[@class="footer"]/p/a/text()')[0]
+    document.save("{}/《{}》.docx".format(file_name, text_name))
+
+
+def main():
+#打印一个和谐的界面，一个while分支来处理功能
+    print("----笔趣阁小说爬虫----")
+    print("1-------------搜索小说")
+    print("2----------------退出")
+    flag = int(input("请输入数字选择相应功能："))
+    while 1:
+        if flag == 1:
+            book_url = search_book()
+            find_book(book_url)
+        elif flag == 2:
+            exit(1)
+        else:
+            input("请输入正确的命令:")
+        flag = int(input("请重新输入数字选择相应功能："))
+
+
+if __name__ == '__main__':
+    main()
