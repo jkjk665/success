@@ -1,0 +1,61 @@
+MySQL的特点：
+ 数据是以行和列(表格)的形式去存储的
+表中的每一行叫一条记录,每一列叫一个字段
+	表和表之间的逻辑关联叫关系
+
+数据库软件、数据库、数据仓库的概念
+    1、数据库软件
+      一个软件,看的见,可操作,实现数据库的逻辑功能
+    2、数据库
+      是一种逻辑概念,用来存放数据的仓库,侧重存储
+    3、数据仓库
+      从数据量上来说,比数据库庞大的多,主要用于数据分析和数据挖掘
+
+ 库用法：创建库testdb,指定字符集为 utf8
+        create database testdb character set utf8;
+      2、进入到库 testdb
+        use testdb;
+      3、查看当前所在库
+        select database();
+
+表用法：  创建表(指定字符集)
+        create table 表名(
+	字段名 数据类型,
+	字段名 数据类型,
+	...
+	字段名 数据类型
+	);
+      2、查看已有表的字符集
+        show create table 表名;
+      3、查看表结构
+        desc 表名;
+      4、删除表
+        drop table 表名;
+
+
+练习
+      1、查看所有的库
+                                                                         show databases;
+      2、创建新库 studb
+                                                                         create database studb;
+      3、在 studb 中创建表 tab1 ,指定字符集utf8,字段有 id 、name、age
+                                                                           use studb;
+                                                                          create table tab1(
+                                                                          	id int,
+                                                                         	name char(10),
+                                                                           	age int
+	                                                                         )character set utf8;
+      4、查看tab1的表结构
+        desc tab1;
+      5、在tab1中随便插入2条记录
+        insert into tab1 values
+	   (1,"张三丰",100),(2,"张无忌",30);
+      6、在tab1中的name、age两个字段插入2条记录
+        insert into tab1(name,age) values
+	  ("金毛狮王",88),("紫衫龙王",87);
+      7、查看tab1中所有记录
+        select * from tab1;
+      8、查看tab1表中所有人的姓名和年龄
+        select name,age from tab1;
+      9、查看tab1表中年龄大于20的信息
+        select * from tab1 where age>20;
